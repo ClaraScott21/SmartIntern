@@ -1,44 +1,68 @@
 // ============================================
-// NEXORA — Login Page Logic
+// SmartIntern — Login
 // ============================================
 
-const API_URL = 'http://localhost:3000/api'; // change if your backend runs elsewhere
-
-// ---------- State ----------
-let selectedRole = 'student';
+const API_URL = 'http://localhost:3000/api';
 
 // ---------- Elements ----------
-const tabs        = document.querySelectorAll('.role-tab');
-const form        = document.getElementById('loginForm');
-const emailInput  = document.getElementById('email');
-const passInput   = document.getElementById('password');
-const errorBox    = document.getElementById('errorBox');
-const loginBtn    = document.getElementById('loginBtn');
+const form       = document.getElementById('loginForm');
+const emailInput = document.getElementById('email');
+const passInput  = document.getElementById('password');
+const errorBox   = document.getElementById('errorBox');
+const errorText  = document.getElementById('errorText');
+const loginBtn   = document.getElementById('loginBtn');
+const btnText    = document.getElementById('btn-text');
+const btnIcon    = document.getElementById('btn-icon');
+const btnLoader  = document.getElementById('btn-loader');
+const alertBox   = document.getElementById('login-alert');
+const alertText  = document.getElementById('login-alert-text');
+const togglePass = document.getElementById('toggle-password');
 
-// ---------- Role tab switching ----------
-tabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    tabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    selectedRole = tab.dataset.role;
-    hideError();
+// ---------- Password toggle ----------
+if (togglePass) {
+  togglePass.addEventListener('click', () => {
+    const isPassword = passInput.type === 'password';
+    passInput.type = isPassword ? 'text' : 'password';
+    const icon = document.getElementById('eye-icon');
+    if (icon) {
+      icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+      if (window.lucide) window.lucide.createIcons();
+    }
   });
-});
+}
 
 // ---------- Helpers ----------
 function showError(msg) {
-  errorBox.textContent = msg;
-  errorBox.classList.add('show');
+  errorText.textContent = msg;
+  errorBox.classList.remove('hidden');
+  errorBox.classList.add('flex');
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function hideError() {
-  errorBox.textContent = '';
-  errorBox.classList.remove('show');
+  errorBox.classList.add('hidden');
+  errorBox.classList.remove('flex');
+  errorText.textContent = '';
+}
+
+function showAlert(msg) {
+  alertText.textContent = msg;
+  alertBox.classList.remove('hidden');
+  alertBox.classList.add('flex');
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function setLoading(isLoading) {
   loginBtn.disabled = isLoading;
-  loginBtn.classList.toggle('loading', isLoading);
+  if (isLoading) {
+    btnText.textContent = 'Logging in…';
+    if (btnIcon) btnIcon.classList.add('hidden');
+    if (btnLoader) btnLoader.classList.remove('hidden');
+  } else {
+    btnText.textContent = 'Log In';
+    if (btnIcon) btnIcon.classList.remove('hidden');
+    if (btnLoader) btnLoader.classList.add('hidden');
+  }
 }
 
 // ---------- Validation ----------
@@ -73,8 +97,7 @@ form.addEventListener('submit', async (e) => {
 
   const payload = {
     email: emailInput.value.trim(),
-    password: passInput.value,
-    selectedRole: selectedRole
+    password: passInput.value
   };
 
   setLoading(true);
@@ -89,36 +112,38 @@ form.addEventListener('submit', async (e) => {
     const data = await res.json();
 
     if (!res.ok) {
-      // Backend returns { error: "..." }
       showError(data.error || 'Login failed. Please try again.');
       setLoading(false);
       return;
     }
 
-    // ---------- Success ----------
-    // Save token + user info
-    localStorage.setItem('nexora_token', data.token);
-    localStorage.setItem('nexora_user', JSON.stringify({
+    // Success
+    localStorage.setItem('smartintern_token', data.token);
+    localStorage.setItem('smartintern_user', JSON.stringify({
       userId: data.userId,
       role: data.role,
       name: data.name || ''
     }));
 
-    // ---------- Redirect by role ----------
-    if (data.role === 'student') {
-      if (data.profileCompleted) {
-        window.location.href = 'home.html';
+    showAlert('Login successful! Redirecting…');
+
+    // Redirect by role (from DB — user does not choose)
+    setTimeout(() => {
+      if (data.role === 'student') {
+        if (data.profileCompleted) {
+          window.location.href = 'home.html';
+        } else {
+          window.location.href = 'student-profile.html';
+        }
+      } else if (data.role === 'company') {
+        window.location.href = 'company-dashboard.html';
+      } else if (data.role === 'admin') {
+        window.location.href = 'admin-dashboard.html';
       } else {
-        window.location.href = 'student-profile.html';
+        showError('Unknown account role. Please contact support.');
+        setLoading(false);
       }
-    } else if (data.role === 'company') {
-      window.location.href = 'company-dashboard.html';
-    } else if (data.role === 'admin') {
-      window.location.href = 'admin-dashboard.html';
-    } else {
-      showError('Unknown account role. Please contact support.');
-      setLoading(false);
-    }
+    }, 600);
 
   } catch (err) {
     console.error('Login error:', err);
@@ -127,7 +152,7 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// ---------- Enter key ----------
+// ---------- Enter key moves to password ----------
 emailInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') passInput.focus();
 });

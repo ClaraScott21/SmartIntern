@@ -1,9 +1,10 @@
 // ============================================
-// NEXORA — Auth routes
+// SmartIntern — Auth routes
 // POST /api/auth/login
 // POST /api/auth/register
 // GET  /api/auth/me
 // ============================================
+
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -13,7 +14,6 @@ const verifyToken = require('../middleware/verifyToken');
 const router = express.Router();
 const SALT_ROUNDS = 10;
 
-// ---------- Helper: sign JWT ----------
 function signToken(userId, role) {
   return jwt.sign(
     { userId, role },
@@ -22,7 +22,6 @@ function signToken(userId, role) {
   );
 }
 
-// ---------- Helper: build user response ----------
 async function buildUserResponse(user) {
   let profileCompleted = true;
   let displayName = '';
@@ -39,7 +38,6 @@ async function buildUserResponse(user) {
     } else {
       const s = rows[0];
       displayName = `${s.first_name || ''} ${s.last_name || ''}`.trim();
-      // treat as complete if they at least entered a name and 1 skill
       profileCompleted = !!s.first_name && s.skill_count > 0;
     }
   } else if (user.role === 'company') {
@@ -64,23 +62,17 @@ async function buildUserResponse(user) {
 
 // ============================================
 // POST /api/auth/login
-// Body: { email, password, selectedRole }
+// Body: { email, password }
+// Role is read from the DB — user does not pick it
 // ============================================
 router.post('/login', async (req, res) => {
   try {
-    const { email, password, selectedRole } = req.body;
+    const { email, password } = req.body;
 
-    // --- validate input ---
-    if (!email || !password || !selectedRole) {
-      return res.status(400).json({ error: 'Email, password and role are required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const allowedRoles = ['student', 'company', 'admin'];
-    if (!allowedRoles.includes(selectedRole)) {
-      return res.status(400).json({ error: 'Invalid role' });
-    }
-
-    // --- find user ---
     const [rows] = await pool.query(
       `SELECT user_id, email, password_hash, role
        FROM User WHERE email = ? LIMIT 1`,
@@ -93,26 +85,16 @@ router.post('/login', async (req, res) => {
 
     const user = rows[0];
 
-    // --- verify password ---
     const passwordOk = await bcrypt.compare(password, user.password_hash);
     if (!passwordOk) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // --- check the selected role matches the DB role ---
-    if (user.role !== selectedRole) {
-      const label = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
-      return res.status(403).json({ error: `This account is not a ${label} account` });
-    }
-
-    // --- build response ---
     const userInfo = await buildUserResponse(user);
     const token = signToken(user.user_id, user.role);
 
-    return res.json({
-      token,
-      ...userInfo
-    });
+    return res.json({ token, ...userInfo });
+
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ error: 'Server error during login' });
@@ -121,11 +103,7 @@ router.post('/login', async (req, res) => {
 
 // ============================================
 // POST /api/auth/register
-// Body: {
-//   email, password, role,
-//   student?: { firstName, lastName },
-//   company?: { companyName, description }
-// }
+// Body: { email, password, role, student?, company? }
 // ============================================
 router.post('/register', async (req, res) => {
   const conn = await pool.getConnection();
@@ -147,7 +125,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    // --- check email not taken ---
     const [existing] = await conn.query(
       `SELECT user_id FROM User WHERE email = ? LIMIT 1`,
       [email]
@@ -157,19 +134,16 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
-    // --- start transaction ---
     await conn.beginTransaction();
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // --- insert User ---
     const [userResult] = await conn.query(
       `INSERT INTO User (email, password_hash, role) VALUES (?, ?, ?)`,
       [email, passwordHash, role]
     );
     const userId = userResult.insertId;
 
-    // --- insert Student or Company ---
     if (role === 'student') {
       const firstName = (student && student.firstName) || '';
       const lastName  = (student && student.lastName)  || '';
@@ -189,14 +163,13 @@ router.post('/register', async (req, res) => {
     await conn.commit();
     conn.release();
 
-    // --- auto-login after register ---
     const token = signToken(userId, role);
     return res.status(201).json({
       token,
       userId,
       role,
       name: role === 'student'
-        ? `${(student?.firstName||'')} ${(student?.lastName||'')}`.trim()
+        ? `${(student?.firstName || '')} ${(student?.lastName || '')}`.trim()
         : (company?.companyName || ''),
       profileCompleted: false
     });
@@ -211,7 +184,6 @@ router.post('/register', async (req, res) => {
 
 // ============================================
 // GET /api/auth/me
-// Header: Authorization: Bearer <token>
 // ============================================
 router.get('/me', verifyToken, async (req, res) => {
   try {
@@ -222,8 +194,7 @@ router.get('/me', verifyToken, async (req, res) => {
     if (!rows.length) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const user = rows[0];
-    const userInfo = await buildUserResponse(user);
+    const userInfo = await buildUserResponse(rows[0]);
     return res.json(userInfo);
   } catch (err) {
     console.error('Me error:', err);
