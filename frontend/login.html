@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartIntern — Login</title>
+  <link rel="stylesheet" href="css/login.css" />
+</head>
+<body>
+
+  <div class="login-wrapper">
+
+    <!-- ============================================
+         LEFT: Product preview panel
+         ============================================ -->
+    <div class="brand-panel">
+
+      <div class="brand-content">
+
+        <!-- Brand mark -->
+        <div class="brand-mark">
+          <div class="brand-mark-icon">
+            <span class="layer layer-1">S</span>
+            <span class="layer layer-2">S</span>
+            <span class="layer layer-3">S</span>
+          </div>
+          <span class="brand-mark-name">SmartIntern</span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="brand-headline">
+          Find the internship<br />
+          <span class="brand-headline-accent">that fits you.</span>
+        </h1>
+
+        <p class="brand-subhead">
+          Transparent match scores. Clear skill gaps. Real applications.
+        </p>
+
+        <!-- Mock match card -->
+        <div class="match-card">
+
+          <div class="match-card-header">
+            <div class="match-card-logo">T</div>
+            <div class="match-card-info">
+              <h3>Frontend Intern</h3>
+              <p>TechCorp Ltd. · Yangon</p>
+            </div>
+            <div class="match-score">
+              <span class="match-score-value">87%</span>
+              <span class="match-score-label">match</span>
+            </div>
+          </div>
+
+          <div class="match-bar">
+            <div class="match-bar-fill" style="width: 87%"></div>
+          </div>
+
+          <div class="match-breakdown">
+            <div class="match-row matched">
+              <span class="match-dot"></span>
+              <span class="match-label">JavaScript</span>
+              <span class="match-value">Advanced</span>
+            </div>
+            <div class="match-row matched">
+              <span class="match-dot"></span>
+              <span class="match-label">React</span>
+              <span class="match-value">Intermediate</span>
+            </div>
+            <div class="match-row missing">
+              <span class="match-dot"></span>
+              <span class="match-label">TypeScript</span>
+              <span class="match-value">Missing</span>
+            </div>
+            <div class="match-row matched">
+              <span class="match-dot"></span>
+              <span class="match-label">GPA</span>
+              <span class="match-value">3.45 / 3.0</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Stat row -->
+        <div class="stat-row">
+          <div class="stat">
+            <span class="stat-value">1,247</span>
+            <span class="stat-label">Internships</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-value">92%</span>
+            <span class="stat-label">Match accuracy</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-value">&lt; 2s</span>
+            <span class="stat-label">To apply</span>
+          </div>
+        </div>
+
+        <p class="brand-footer">
+          Built for IT students and companies · No fees
+        </p>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================
+         RIGHT: Login form
+         ============================================ -->
+    <div class="form-panel">
+      <div class="form-card">
+
+        <h2 class="form-title">Welcome back</h2>
+        <p class="form-subtitle">Sign in to continue</p>
+
+        <!-- Role tabs -->
+        <div class="role-tabs">
+          <button type="button" class="role-tab active" data-role="student">Student</button>
+          <button type="button" class="role-tab" data-role="company">Company</button>
+        </div>
+
+        <!-- Login form -->
+        <form id="loginForm" novalidate>
+
+          <div class="input-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div class="input-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <!-- Error message box -->
+          <div id="errorBox" class="error-box" role="alert" aria-live="polite"></div>
+
+          <button type="submit" class="btn-login" id="loginBtn">
+            <span class="btn-text">Login</span>
+            <span class="btn-loader" aria-hidden="true"></span>
+          </button>
+
+        </form>
+
+        <!-- Register links -->
+        <div class="register-links">
+          <p>Don't have an account?</p>
+          <div class="register-buttons">
+            <a href="register.html?role=student" class="link-register">Register as Student</a>
+            <a href="register.html?role=company" class="link-register">Register as Company</a>
+          </div>
+        </div>
+
+      </div>
+
+      <p class="footer-note">© 2026 SmartIntern · NEXORA</p>
+    </div>
+
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
